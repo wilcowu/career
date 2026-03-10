@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大学生择业定位：深度职业测评 Pro (技能版)</title>
+    <!-- 引入 Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f5f7fa;
+            --text-color: #333;
+            --card-bg: #ffffff;
+            --accent-color: #ff6b6b;
+            --success-color: #2ecc71;
+            --hover-border: #4a90e2;
+            --skill-tag-bg: #e3f2fd;
+            --skill-tag-text: #1565c0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            color: var(--text-color);
+            padding: 20px 0;
+        }
+
+        .container {
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 850px;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1em;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .question-card {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .question-card.active {
+            display: block;
+        }
+
+        .question-text {
+            font-size: 1.3em;
+            margin-bottom: 25px;
+            font-weight: 600;
+            color: #2c3e50;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        @media (min-width: 600px) {
+            .options-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .option-btn {
+            background: var(--secondary-color);
+            border: 2px solid transparent;
+            padding: 20px 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1em;
+            color: var(--text-color);
+            text-align: left;
+            line-height: 1.4;
+            position: relative;
+        }
+
+        .option-btn:hover {
+            background: #eef2f7;
+            transform: translateY(-2px);
+            border-color: var(--hover-border);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+        }
+
+        .option-btn.selected {
+            background: #ebf5ff;
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .nav-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .btn-prev {
+            background: #e0e0e0;
+            color: #666;
+        }
+        
+        .btn-prev:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-next {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-next:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* 结果页样式增强 */
+        .result-section {
+            display: none;
+            animation: slideUp 0.6s;
+            text-align: left;
+        }
+
+        .result-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .radar-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            margin: 20px auto;
+            max-width: 400px;
+        }
+
+        .code-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--primary-color);
+            letter-spacing: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            background: #f0f4f8;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .recommendation-box {
+            background: #f8f9fa;
+            border-left: 5px solid var(--accent-color);
+            padding: 25px;
+            margin-top: 25px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 20px;
+            background: var(--primary-color);
+            margin-right: 10px;
+            border-radius: 3px;
+        }
+
+        /* 职业卡片样式 */
+        .job-card {
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .job-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: var(--primary-color);
+        }
+
+        .job-title {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .skill-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .skill-tag {
+            background: var(--skill-tag-bg);
+            color: var(--skill-tag-text);
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        
+        .skill-tag::before {
+            content: '🎓';
+            margin-right: 4px;
+            font-size: 0.8em;
+        }
+
+        .action-plan-list {
+            padding-left: 20px;
+            line-height: 1.8;
+            color: #444;
+        }
+        
+        .action-plan-list li {
+            margin-bottom: 5px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 测评区域 -->
+    <div id="quiz-area">
+        <h1>🎓 大学生择业定位系统 Pro</h1>
+        <p class="subtitle">基于霍兰德理论 | 30道情境选择 | 匹配职位与核心技能</p>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+
+        <div id="question-container">
+            <!-- 问题动态插入 -->
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn btn-prev" id="prev-btn" onclick="prevQuestion()" disabled>← 上一题</button>
+            <span id="question-count" style="color: #888; font-size: 0.9em;">第 1 / 30 题</span>
+            <button class="btn btn-next" id="next-btn" onclick="nextQuestion()" disabled>下一题 →</button>
+        </div>
+    </div>
+
+    <!-- 结果区域 -->
+    <div id="result-area" class="result-section">
+        <div class="result-header">
+            <h1>🎉 测评完成!</h1>
+            <p>你的职业倾向代码是：</p>
+            <div class="code-display" id="result-code">---</div>
+            <p style="color: #666; font-size: 0.9em;">(前三个字母代表你的核心职业人格)</p>
+        </div>
+        
+        <div class="radar-container">
+            <canvas id="radarChart"></canvas>
+        </div>
+
+        <div class="recommendation-box">
+            <div class="section-title">核心特质分析</div>
+            <p id="result-desc" style="line-height: 1.6; color: #555;"></p>
+            
+            <div class="section-title">推荐细分职业与必备技能</div>
+            <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">以下是根据您的主导类型和辅助类型匹配的职业，以及大学期间需要掌握的核心技能：</p>
+            <div id="job-container">
+                <!-- 职业卡片将在这里生成 -->
+            </div>
+            
+            <div class="section-title">大学行动路线图</div>
+            <ul id="action-plan" class="action-plan-list"></ul>
+        </div>
+
+        <button class="btn btn-next" onclick="location.reload()" style="margin-top: 30px; width: 100%;">重新测试</button>
+    </div>
+</div>
+
+<script>
+    /**
+     * 霍兰德数据配置
+     * 每个类型包含：名称、描述、以及细分职业列表
+     * 每个细分职业包含：职位名称、具体技能列表 (软件/证书/能力)
+     */
+    const hollandData = {
+        R: {
+            name: "现实型 (Realistic)",
+            desc: "动手能力强，喜欢操作工具、机器，偏好户外或具体的实物工作，务实稳重。",
+            jobs: [
+                { title: "机械工程师", skills: ["SolidWorks/CATIA", "机械原理", "AutoCAD", "金工实习", "PLC编程基础"] },
+                { title: "土木工程师", skills: ["结构力学", "PKPM/YJK", "工程测量", "BIM技术 (Revit)", "建造师考证规划"] },
+                { title: "无人机飞手", skills: ["航空法规", "飞行控制技术", "航拍后期 (PR/AE)", "设备维护", "测绘基础"] },
+                { title: "智能硬件开发", skills: ["C/C++", "Arduino/STM32", "电路原理图 (Altium Designer)", "3D打印", "传感器应用"] },
+                { title: "汽车维修专家", skills: ["汽车构造", "故障诊断仪使用", "新能源汽车技术", "发动机原理", "维修实操认证"] },
+                { title: "建筑设计师", skills: ["SketchUp", "Rhino", "Vray渲染", "建筑规范", "模型制作"] },
+                { title: "环境检测员", skills: ["化学分析", "采样技术", "实验室安全", "环境监测标准", "数据处理软件"] },
+                { title: "珠宝鉴定师", skills: ["宝石学基础", "显微镜操作", "贵金属检测", "分级标准 (GIA/NGTC)", "市场评估"] }
+            ],
+            actions: ["参加金工/电子实习", "学习 CAD/SolidWorks 建模", "参与机器人大赛", "考取技能操作证书"]
+        },
+        I: {
+            name: "研究型 (Investigative)",
+            desc: "善于观察思考，喜欢逻辑推理和分析，解决抽象的科学或技术难题。",
+            jobs: [
+                { title: "数据科学家", skills: ["Python/R", "SQL", "机器学习算法", "统计学", "Tableau/PowerBI"] },
+                { title: "AI 算法工程师", skills: ["PyTorch/TensorFlow", "线性代数", "深度学习", "LeetCode刷题", "论文阅读能力"] },
+                { title: "生物研究员", skills: ["分子生物学实验", "PCR/电泳", "文献检索 (PubMed)", "实验设计", "科研绘图"] },
+                { title: "量化分析师", skills: ["随机过程", "C++/Python", "金融衍生品定价", "时间序列分析", "数学建模"] },
+                { title: "网络安全专家", skills: ["计算机网络", "渗透测试 (Kali)", "逆向工程", "密码学", "CTF竞赛经验"] },
+                { title: "天文观测员", skills: ["天体物理", "望远镜操作", "图像处理 (Python)", "观测计划制定", "数据分析"] },
+                { title: "新材料研发", skills: ["材料表征 (SEM/XRD)", "高分子化学", "实验仿真", "专利撰写", "文献综述"] },
+                { title: "药理分析师", skills: ["药理学", "动物实验伦理", "HPLC操作", "药物动力学", "统计软件 (SAS)"] }
+            ],
+            actions: ["参与导师科研项目", "精通 Python/R/Matlab", "发表学术论文", "参加数学建模竞赛"]
+        },
+        A: {
+            name: "艺术型 (Artistic)",
+            desc: "富有创造力，喜欢自我表达，追求美感，厌恶重复和严格的规章制度。",
+            jobs: [
+                { title: "UI/UX 设计师", skills: ["Figma/Sketch", "交互设计原则", "用户研究", "原型制作 (Axure)", "设计规范"] },
+                { title: "新媒体运营", skills: ["文案写作", "短视频剪辑 (剪映/PR)", "社群管理", "数据分析", "热点敏感度"] },
+                { title: "影视后期制作", skills: ["After Effects", "Premiere", "DaVinci调色", "三维合成 (C4D)", "视听语言"] },
+                { title: "游戏原画师", skills: ["Photoshop", "人体结构", "色彩理论", "Procreate/板绘", "风格化创作"] },
+                { title: "独立音乐人", skills: ["乐理知识", "编曲软件 (Logic/Cubase)", "乐器演奏", "录音混音", "版权保护"] },
+                { title: "创意文案策划", skills: ["广告学", "头脑风暴技巧", "PPT美化", "品牌故事构建", "修辞与逻辑"] },
+                { title: "时尚买手", skills: ["流行趋势分析", "面料知识", "审美搭配", "谈判技巧", "市场调研"] },
+                { title: "插画师", skills: ["手绘基础", "数字绘画", "构图技巧", "个人IP打造", "商业授权流程"] }
+            ],
+            actions: ["建立个人作品集 (Portfolio)", "学习 Adobe 创意软件", "参与校园艺术节", "尝试自媒体创作"]
+        },
+        S: {
+            name: "社会型 (Social)",
+            desc: "乐于助人，擅长沟通与合作，喜欢教导、咨询或服务他人，关注社会福利。",
+            jobs: [
+                { title: "心理咨询师", skills: ["普通心理学", "咨询流派技术", "倾听与共情", "个案记录", "执业资格证备考"] },
+                { title: "人力资源专员", skills: ["招聘面试技巧", "劳动法", "绩效考核 (KPI/OKR)", "员工关系", "Office办公软件"] },
+                { title: "教育培训师", skills: ["课程设计", "公众演讲", "课堂掌控", "教育心理学", "多媒体教学"] },
+                { title: "社工管理者", skills: ["社会工作概论", "个案/小组工作", "资源链接", "项目书撰写", "政策法规"] },
+                { title: "用户增长运营", skills: ["用户画像分析", "活动策划", "A/B测试", "沟通协作", "数据敏感度"] },
+                { title: "公共关系经理", skills: ["危机公关", "媒体联络", "新闻稿撰写", "商务礼仪", "组织协调"] },
+                { title: "医疗护理专家", skills: ["护理学基础", "急救技能", "医患沟通", "解剖生理学", "护士执业证"] },
+                { title: "职业规划师", skills: ["职业测评工具", "生涯理论", "简历修改", "模拟面试", "行业洞察"] }
+            ],
+            actions: ["参加志愿者/支教活动", "考取教师资格证", "担任社团领导", "学习沟通与谈判技巧"]
+        },
+        E: {
+            name: "企业型 (Enterprising)",
+            desc: "精力充沛，喜欢影响和领导他人，追求成就、地位和经济回报，敢于冒险。",
+            jobs: [
+                { title: "产品经理", skills: ["需求分析", "原型设计 (Axure)", "项目管理 (Agile)", "竞品分析", "沟通协调"] },
+                { title: "市场营销总监", skills: ["营销战略 (4P/4C)", "品牌推广", "数字营销 (SEO/SEM)", "预算管理", "团队领导"] },
+                { title: "创业合伙人", skills: ["商业计划书 (BP)", "股权设计", "融资路演", "团队建设", "风险控制"] },
+                { title: "销售管培生", skills: ["销售技巧 (SPIN)", "客户关系管理 (CRM)", "商务谈判", "抗压能力", "行业知识"] },
+                { title: "投资顾问", skills: ["证券投资分析", "财务报表分析", "宏观经济", "基金从业资格证", "客户服务"] },
+                { title: "电商运营主管", skills: ["平台规则 (淘宝/抖音)", "直通车推广", "转化率优化", "供应链管理", "数据分析"] },
+                { title: "活动策划执行", skills: ["创意构思", "流程控场", "供应商管理", "预算控制", "应急处理"] },
+                { title: "政务公务员", skills: ["申论写作", "行测技巧", "公文写作", "政策理解", "结构化面试"] }
+            ],
+            actions: ["参加创业大赛", "实习于知名企业市场部", "学习商业计划书撰写", "锻炼公开演讲能力"]
+        },
+        C: {
+            name: "常规型 (Conventional)",
+            desc: "做事严谨有序，喜欢处理数据和文档，遵循流程，注重细节和准确性。",
+            jobs: [
+                { title: "注册会计师", skills: ["会计学原理", "CPA六科备考", "审计实务", "税法", "Excel高级应用"] },
+                { title: "数据分析师", skills: ["Excel (透视表/VBA)", "SQL", "Python基础", "数据清洗", "可视化报表"] },
+                { title: "行政主管", skills: ["档案管理", "会议组织", "公文流转", "办公自动化", "时间管理"] },
+                { title: "银行风控专员", skills: ["信贷管理", "风险识别", "金融法规", "征信报告分析", "谨慎细致"] },
+                { title: "档案管理专家", skills: ["档案分类法", "数字化扫描", "保密制度", "信息检索", "历史知识"] },
+                { title: "供应链协调员", skills: ["ERP系统 (SAP)", "物流管理", "库存控制", "采购流程", "沟通协调"] },
+                { title: "法务助理", skills: ["民法/商法", "合同审核", "法律检索", "文书写作", "司法考试准备"] },
+                { title: "税务专员", skills: ["税务筹划", "纳税申报", "发票管理", "最新税收政策", "细心耐心"] }
+            ],
+            actions: ["考取 CPA/ACCA 证书", "精通 Excel/SQL 数据处理", "参与学生会秘书处", "学习流程优化管理"]
+        }
+    };
+
+    // 30道题目 (保持原有的4选项风格)
+    const questions = [
+        { q: "在周末，你更倾向于做什么？", opts: [{ t: "R", text: "修理家里的电器或组装家具" }, { t: "I", text: "阅读科普书籍或研究一个新理论" }, { t: "A", text: "画画、写作或去听音乐会" }, { t: "S", text: "和朋友聚会聊天或做志愿者" }] },
+        { q: "在学校小组作业中，你通常扮演什么角色？", opts: [{ t: "E", text: "领导者，分配任务并推动进度" }, { t: "C", text: "记录员，整理资料和检查格式" }, { t: "R", text: "实操员，负责制作模型或实验操作" }, { t: "A", text: "创意担当，负责设计和美化 PPT" }] },
+        { q: "如果让你选择一门选修课，你会选？", opts: [{ t: "I", text: "《逻辑学与批判性思维》" }, { t: "S", text: "《心理咨询基础》" }, { t: "R", text: "《机器人制作入门》" }, { t: "E", text: "《市场营销实战》" }] },
+        { q: "面对一堆杂乱的数据，你的第一反应是？", opts: [{ t: "C", text: "马上分类整理，做成清晰的表格" }, { t: "I", text: "分析数据背后的规律和异常" }, { t: "A", text: "觉得枯燥，想把它变成可视化的图表艺术" }, { t: "E", text: "思考如何利用这些数据去说服别人" }] },
+        { q: "你理想的办公环境是？", opts: [{ t: "R", text: "实验室、车间或户外现场" }, { t: "A", text: "充满艺术气息、自由随意的工作室" }, { t: "S", text: "温馨、有人情味，方便交流的场所" }, { t: "C", text: "安静、整洁、秩序井然的办公室" }] },
+        { q: "当你遇到一个难题时，你习惯？", opts: [{ t: "I", text: "查阅资料，进行逻辑推导" }, { t: "R", text: "动手尝试，通过实践找答案" }, { t: "S", text: "找人讨论，寻求大家的建议" }, { t: "E", text: "果断决策，承担风险去解决" }] },
+        { q: "下列哪种活动让你最有成就感？", opts: [{ t: "A", text: "创作出一件独一无二的作品" }, { t: "E", text: "成功说服客户签下大单" }, { t: "S", text: "帮助他人解决了心理困扰" }, { t: "C", text: "将复杂的账目核对得一分不差" }] },
+        { q: "你更喜欢和什么样的人打交道？", opts: [{ t: "S", text: "需要帮助或指导的人" }, { t: "E", text: "有野心、有能力合作的伙伴" }, { t: "R", text: "诚实、踏实、不爱空谈的人" }, { t: "I", text: "聪明、博学、能深入交流的人" }] },
+        { q: "对于新的电子产品，你通常？", opts: [{ t: "R", text: "喜欢拆解它，看内部结构" }, { t: "I", text: "研究它的技术参数和原理" }, { t: "C", text: "仔细阅读说明书，按步骤操作" }, { t: "A", text: "关注它的外观设计和用户体验" }] },
+        { q: "在团队发生冲突时，你会？", opts: [{ t: "S", text: "充当调解人，安抚大家情绪" }, { t: "E", text: "强势介入，拍板决定解决方案" }, { t: "C", text: "回顾规则，看谁违反了流程" }, { t: "I", text: "冷静分析冲突的根本原因" }] },
+        { q: "你如何看待“规则”？", opts: [{ t: "C", text: "规则必须严格遵守，保证秩序" }, { t: "A", text: "规则是束缚，应该打破创新" }, { t: "R", text: "只要不影响操作安全，灵活一点没关系" }, { t: "E", text: "规则是用来利用的，目的是达成目标" }] },
+        { q: "假期旅行，你更喜欢？", opts: [{ t: "R", text: "徒步、露营或探险" }, { t: "A", text: "参观博物馆、画廊或特色建筑" }, { t: "S", text: "去贫困地区支教或探访亲友" }, { t: "E", text: "考察当地市场或寻找商机" }] },
+        { q: "如果要学习一项新技能，你选？", opts: [{ t: "I", text: "编程语言或数据分析" }, { t: "R", text: "焊接、木工或驾驶" }, { t: "A", text: "摄影、剪辑或乐器" }, { t: "S", text: "急救知识或手语" }] },
+        { q: "你最喜欢的电视节目类型是？", opts: [{ t: "I", text: "纪录片或科学探索" }, { t: "E", text: "商业访谈或创业真人秀" }, { t: "A", text: "文艺片或创意设计类节目" }, { t: "C", text: "新闻联播或财经报道" }] },
+        { q: "在工作中，你最看重什么？", opts: [{ t: "R", text: "能看到实实在在的成果" }, { t: "S", text: "能帮助到别人，人际关系和谐" }, { t: "E", text: "晋升机会和高薪回报" }, { t: "I", text: "工作的挑战性和智力刺激" }] },
+        { q: "整理房间时，你通常会？", opts: [{ t: "C", text: "按类别严格分区，标签化" }, { t: "A", text: "按自己的审美摆放，不拘一格" }, { t: "R", text: "把坏的东西修好，没用的扔掉" }, { t: "S", text: "边整理边和家人朋友聊天" }] },
+        { q: "对于未来的职业，你希望？", opts: [{ t: "E", text: "成为管理者，领导一个大团队" }, { t: "I", text: "成为某个领域的权威专家" }, { t: "A", text: "拥有自由创作的空间" }, { t: "R", text: "拥有一门过硬的技术手艺" }] },
+        { q: "当朋友向你抱怨时，你通常？", opts: [{ t: "S", text: "耐心倾听，给予情感支持" }, { t: "I", text: "帮他分析问题产生的原因" }, { t: "E", text: "给他提出解决问题的强硬建议" }, { t: "C", text: "告诉他应该遵守什么规矩避免再犯" }] },
+        { q: "你更擅长？", opts: [{ t: "C", text: "记忆细节和执行流程" }, { t: "A", text: "想象画面和构思故事" }, { t: "R", text: "操作器械和处理实物" }, { t: "I", text: "推导公式和验证假设" }] },
+        { q: "如果有一笔资金，你会？", opts: [{ t: "E", text: "投资开店或创业" }, { t: "I", text: "购买科研设备或书籍" }, { t: "A", text: "举办个人展览或出版作品" }, { t: "S", text: "捐赠给慈善机构或资助学生" }] },
+        // 新增10题
+        { q: "在社团招新时，你被哪个部门吸引？", opts: [{ t: "E", text: "外联部，负责拉赞助和谈判" }, { t: "C", text: "秘书处，负责财务和档案管理" }, { t: "A", text: "宣传部，负责海报和视频制作" }, { t: "R", text: "技术部，负责音响灯光搭建" }] },
+        { q: "面对一个未解之谜，你的态度是？", opts: [{ t: "I", text: "废寝忘食地查阅文献直到解开" }, { t: "R", text: "亲自去现场勘察取证" }, { t: "A", text: "将其改编成一个悬疑故事" }, { t: "S", text: "组织讨论会，集思广益" }] },
+        { q: "你更享受哪种反馈？", opts: [{ t: "S", text: "“谢谢你，你帮了大忙”" }, { t: "E", text: "“这个项目多亏了你才盈利”" }, { t: "C", text: "“你的报表没有任何错误”" }, { t: "A", text: "“这个设计太有创意了”" }] },
+        { q: "关于手机 APP，你更关注？", opts: [{ t: "A", text: "界面是否美观，交互动画是否流畅" }, { t: "I", text: "算法是否精准，功能是否强大" }, { t: "C", text: "隐私条款是否清晰，数据是否安全" }, { t: "E", text: "是否有会员增值服务，商业模式如何" }] },
+        { q: "如果学校要建一个花园，你负责？", opts: [{ t: "R", text: "种植花草，铺设水管和电路" }, { t: "A", text: "设计景观布局和色彩搭配" }, { t: "S", text: "组织同学一起劳动，讲解植物知识" }, { t: "C", text: "采购清单管理和预算控制" }] },
+        { q: "在阅读新闻时，你最先看？", opts: [{ t: "E", text: "财经版块，关注股市和公司并购" }, { t: "I", text: "科技版块，关注最新发明发现" }, { t: "S", text: "社会版块，关注民生和人物故事" }, { t: "R", text: "汽车或房产版块，关注实物参数" }] },
+        { q: "你讨厌的工作环境是？", opts: [{ t: "A", text: "死板、不允许任何个性发挥的地方" }, { t: "R", text: "整天坐着不动，没有实际操作机会" }, { t: "I", text: "只凭经验办事，不讲科学依据" }, { t: "C", text: "混乱无序，经常变动计划" }] },
+        { q: "假如你要送礼物，你会选？", opts: [{ t: "A", text: "自己亲手做的工艺品" }, { t: "S", text: "对方急需的生活用品或书籍" }, { t: "E", text: "有品牌价值、拿得出手的礼品" }, { t: "I", text: "高科技小玩意或解谜玩具" }] },
+        { q: "对于“大数据”，你感兴趣的是？", opts: [{ t: "I", text: "挖掘数据背后的关联规则" }, { t: "C", text: "清洗数据，建立规范的数据库" }, { t: "E", text: "利用数据制定营销策略" }, { t: "A", text: "用数据生成可视化的艺术图形" }] },
+        { q: "毕业聚餐时，你通常是？", opts: [{ t: "E", text: "组织者，安排地点和流程" }, { t: "S", text: "照顾者，确保每个人都开心" }, { t: "C", text: "记账员，负责 AA 制收款" }, { t: "A", text: "气氛组，表演节目或拍照记录" }] }
+    ];
+
+    let currentIdx = 0;
+    let userChoices = new Array(questions.length).fill(null);
+
+    function init() {
+        renderQuestion();
+        updateProgress();
+    }
+
+    function renderQuestion() {
+        const container = document.getElementById('question-container');
+        const qData = questions[currentIdx];
+        
+        let html = `<div class="question-card active"><div class="question-text">${currentIdx + 1}. ${qData.q}</div><div class="options-grid">`;
+
+        qData.opts.forEach((opt) => {
+            const isSelected = userChoices[currentIdx] === opt.t ? 'selected' : '';
+            html += `<button class="option-btn ${isSelected}" onclick="selectOption('${opt.t}', this)">${opt.text}</button>`;
+        });
+
+        html += `</div></div>`;
+        container.innerHTML = html;
+
+        document.getElementById('question-count').innerText = `第 ${currentIdx + 1} / ${questions.length} 题`;
+        document.getElementById('prev-btn').disabled = currentIdx === 0;
+        
+        const nextBtn = document.getElementById('next-btn');
+        nextBtn.innerText = currentIdx === questions.length - 1 ? "查看结果 🚀" : "下一题 →";
+        nextBtn.disabled = userChoices[currentIdx] === null;
+    }
+
+    function selectOption(type, btnElement) {
+        userChoices[currentIdx] = type;
+        const buttons = document.querySelectorAll('.option-btn');
+        buttons.forEach(b => b.classList.remove('selected'));
+        btnElement.classList.add('selected');
+        document.getElementById('next-btn').disabled = false;
+    }
+
+    function nextQuestion() {
+        if (userChoices[currentIdx] === null) return;
+        if (currentIdx < questions.length - 1) {
+            currentIdx++;
+            renderQuestion();
+            updateProgress();
+        } else {
+            showResults();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            renderQuestion();
+            updateProgress();
+        }
+    }
+
+    function updateProgress() {
+        const percent = ((currentIdx + 1) / questions.length) * 100;
+        document.getElementById('progress').style.width = `${percent}%`;
+    }
+
+    function showResults() {
+        document.getElementById('quiz-area').style.display = 'none';
+        document.getElementById('result-area').style.display = 'block';
+
+        const scores = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
+        userChoices.forEach(type => { if (type) scores[type]++; });
+
+        const sortedKeys = Object.keys(scores).sort((a, b) => scores[b] - scores[a]);
+        const top3Code = sortedKeys.slice(0, 3).join('');
+        
+        document.getElementById('result-code').innerText = top3Code;
+
+        const mainType = sortedKeys[0];
+        const subType = sortedKeys[1];
+        const mainData = hollandData[mainType];
+        const subData = hollandData[subType];
+
+        document.getElementById('result-desc').innerHTML = `
+            你的主导类型是 <strong>${mainData.name}</strong>，辅助类型是 <strong>${subData.name}</strong>。<br><br>
+            ${mainData.desc}<br>
+            同时，你也具备 ${subData.desc.toLowerCase()}
+        `;
+
+        // 生成职业卡片 (包含技能)
+        const jobContainer = document.getElementById('job-container');
+        jobContainer.innerHTML = '';
+        
+        // 获取前两个类型的推荐职业，各取4个
+        const recommendedJobs = [
+            ...mainData.jobs.slice(0, 4).map(j => ({...j, source: mainType})),
+            ...subData.jobs.slice(0, 4).map(j => ({...j, source: subType}))
+        ];
+        
+        // 简单去重 (根据职位标题)
+        const uniqueJobs = [];
+        const seenTitles = new Set();
+        for (const job of recommendedJobs) {
+            if (!seenTitles.has(job.title)) {
+                seenTitles.add(job.title);
+                uniqueJobs.push(job);
+            }
+        }
+
+        uniqueJobs.forEach(job => {
+            const card = document.createElement('div');
+            card.className = 'job-card';
+            
+            let skillsHtml = '';
+            job.skills.forEach(skill => {
+                skillsHtml += `<span class="skill-tag">${skill}</span>`;
+            });
+
+            card.innerHTML = `
+                <span class="job-title">${job.title}</span>
+                <div style="font-size: 0.85em; color: #888; margin-bottom: 5px;">所属类型：${hollandData[job.source].name.split(' ')[0]}</div>
+                <div class="skill-list">${skillsHtml}</div>
+            `;
+            jobContainer.appendChild(card);
+        });
+
+        // 生成行动路线图 (合并去重)
+        const actionList = document.getElementById('action-plan');
+        actionList.innerHTML = '';
+        const actions = [...new Set([...mainData.actions, ...subData.actions])];
+        actions.forEach(act => {
+            const li = document.createElement('li');
+            li.innerText = act;
+            actionList.appendChild(li);
+        });
+
+        drawRadarChart(scores);
+    }
+
+    function drawRadarChart(scores) {
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        const maxVal = 10; 
+
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['现实型 (R)', '研究型 (I)', '艺术型 (A)', '社会型 (S)', '企业型 (E)', '常规型 (C)'],
+                datasets: [{
+                    label: '得分分布',
+                    data: [scores.R, scores.I, scores.A, scores.S, scores.E, scores.C],
+                    backgroundColor: 'rgba(74, 144, 226, 0.3)',
+                    borderColor: '#4a90e2',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#4a90e2',
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        suggestedMin: 0,
+                        suggestedMax: maxVal,
+                        ticks: { stepSize: 2, backdropColor: 'transparent', color: '#666' },
+                        grid: { color: '#e0e0e0' },
+                        angleLines: { color: '#e0e0e0' },
+                        pointLabels: { font: { size: 11, weight: 'bold' }, color: '#333' }
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    init();
+</script>
+
+</body>
+</html>
